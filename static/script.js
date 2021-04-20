@@ -21,7 +21,7 @@ class Communication {
                     if (!response.notInLobby) {
                         manager.downloadGameState()
                         render.boardSetup()
-                        this.intervalId = setInterval(manager.downloadGameState, 1000)
+                        manager.intervalId = setInterval(manager.downloadGameState, 1000)
                     } else { document.cookie = "playerToken=\"\"; Expires=" + new Date(0).toUTCString(); console.log("deleted"); }
                 }
             };
@@ -38,10 +38,10 @@ class Communication {
             if (this.readyState == 4 && this.status == 200) {
                 let response = JSON.parse(this.responseText)
                 console.log(response)
-                document.cookie = "playerToken=" + response.playerToken
+                document.cookie = "playerToken=" + response.playerToken + "; SameSite=Lax"
                 manager.downloadGameState()
                 render.boardSetup()
-                this.intervalId = setInterval(manager.downloadGameState, 1000)
+                manager.intervalId = setInterval(manager.downloadGameState, 1000)
             }
         };
         request.open("POST", "http://localhost:3000/login", true)
@@ -57,7 +57,8 @@ class Communication {
                 let response = JSON.parse(this.responseText)
                 render.showGameState(response)
                 if (response.finished) {
-                    clearInterval(this.intervalId)
+                    console.log(manager.intervalId);
+                    clearInterval(manager.intervalId)
                 }
             }
         };
@@ -199,6 +200,7 @@ class Renderer {
         document.getElementById("main").innerHTML = ""
         let lobby = document.createElement("div")
         lobby.id = "lobby"
+        let time = document.createElement("div")
         let switchElem = document.createElement("label")
         let switchInput = document.createElement("input")
         let slider = document.createElement("span")
@@ -220,7 +222,12 @@ class Renderer {
                 case "red": {
                     if (data.lobby[i].state > 0) lobby.childNodes[0].style.backgroundColor = "red"
                     lobby.childNodes[0].innerHTML = data.lobby[i].nickname
-                    data.lobby[i].state == 2 ? lobby.childNodes[0].classList.add("active") : null
+                    if (data.lobby[i].state == 2) {
+                        switchElem.style.display = "none"
+                        time.innerHTML = 15 - Math.floor((Date.now() - data.lobby[i].turnBegin) / 1000)
+                        lobby.childNodes[0].append(time)
+                        lobby.childNodes[0].classList.add("active")
+                    }
                     if (data.lobby[i].token) {
                         lobby.childNodes[0].append(switchElem)
                         switchInput.checked = data.lobby[i].state > 0
@@ -230,7 +237,12 @@ class Renderer {
                 case "green": {
                     if (data.lobby[i].state > 0) lobby.childNodes[1].style.backgroundColor = "green"
                     lobby.childNodes[1].innerHTML = data.lobby[i].nickname
-                    data.lobby[i].state == 2 ? lobby.childNodes[1].classList.add("active") : null
+                    if (data.lobby[i].state == 2) {
+                        switchElem.style.display = "none"
+                        time.innerHTML = 15 - Math.floor((Date.now() - data.lobby[i].turnBegin) / 1000)
+                        lobby.childNodes[1].append(time)
+                        lobby.childNodes[1].classList.add("active")
+                    }
                     if (data.lobby[i].token) {
                         lobby.childNodes[1].append(switchElem)
                         switchInput.checked = data.lobby[i].state > 0
@@ -240,7 +252,12 @@ class Renderer {
                 case "blue": {
                     if (data.lobby[i].state > 0) lobby.childNodes[2].style.backgroundColor = "blue"
                     lobby.childNodes[2].innerHTML = data.lobby[i].nickname
-                    data.lobby[i].state == 2 ? lobby.childNodes[2].classList.add("active") : null
+                    if (data.lobby[i].state == 2) {
+                        switchElem.style.display = "none"
+                        time.innerHTML = 15 - Math.floor((Date.now() - data.lobby[i].turnBegin) / 1000)
+                        lobby.childNodes[2].append(time)
+                        lobby.childNodes[2].classList.add("active")
+                    }
                     if (data.lobby[i].token) {
                         lobby.childNodes[2].append(switchElem)
                         switchInput.checked = data.lobby[i].state > 0
@@ -250,7 +267,12 @@ class Renderer {
                 case "yellow": {
                     if (data.lobby[i].state > 0) lobby.childNodes[3].style.backgroundColor = "yellow"
                     lobby.childNodes[3].innerHTML = data.lobby[i].nickname
-                    data.lobby[i].state == 2 ? lobby.childNodes[3].classList.add("active") : null
+                    if (data.lobby[i].state == 2) {
+                        switchElem.style.display = "none"
+                        time.innerHTML = 15 - Math.floor((Date.now() - data.lobby[i].turnBegin) / 1000)
+                        lobby.childNodes[3].append(time)
+                        lobby.childNodes[3].classList.add("active")
+                    }
                     if (data.lobby[i].token) {
                         lobby.childNodes[3].append(switchElem)
                         switchInput.checked = data.lobby[i].state > 0

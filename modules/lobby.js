@@ -4,6 +4,8 @@ class Lobby {
         this.playerList = []
         this.remainingColors = ["red", "green", "blue", "yellow"]
         this.full = false
+        this.detectedAFK = 0
+        this.gameEnded = false
     }
 
     newPlayer(newPlayerToken, nickname) {
@@ -14,7 +16,7 @@ class Lobby {
     }
 
     getPlayer(playerId) {
-        return playerLis[playerId]
+        return playerList[playerId]
     }
 
     getGameAndPlayer(playerToken) {
@@ -44,7 +46,6 @@ class Lobby {
             this.full = true
             this.beginGame()
         }
-        console.log(this.playerList);
         return { color: this.playerList[playerId].color, state: this.playerList[playerId].state }
     }
 
@@ -52,30 +53,47 @@ class Lobby {
         console.log("game began")
         this.playerList[0].state = 2
         this.playerList[0].turnBegin = Date.now()
+        this.detectedAFK = setTimeout(function () {
+            this.playerList[this.currentPlayer].state = -1
+            console.log("afk detected, setting his state to -1", this.playerList)
+            this.nextPlayer()
+        }.bind(this), 15000)
         this.currentPlayer = 0
     }
 
     nextPlayer() {
-        let nextPlayer = 1
-        if (this.currentPlayer == this.playerList.length - 1) {
-            nextPlayer = 0
-        } else { nextPlayer += this.currentPlayer }
-        if (this.playerList[nextPlayer].state == 1) {
-            this.playerList[this.currentPlayer].state = 1
-            this.playerList[nextPlayer].state = 2
-            this.playerList[nextPlayer].turnBegin = Date.now()
-            this.currentPlayer = nextPlayer
+        let counter = 0
+        for (let i = 0; i < this.playerList.length; i++) {
+            if (this.playerList[i].state != -1) { counter++ }
+        }
+        if (counter > 1 && !this.gameEnded) {
+            clearTimeout(this.detectedAFK)
+            let nextPlayer = 1
+            if (this.currentPlayer == this.playerList.length - 1) {
+                nextPlayer = 0
+            } else { nextPlayer += this.currentPlayer }
+            if (this.playerList[nextPlayer].state == 1) {
+                this.playerList[this.currentPlayer].state = 1
+                this.playerList[nextPlayer].state = 2
+                this.playerList[nextPlayer].turnBegin = Date.now()
+                this.currentPlayer = nextPlayer
+                this.detectedAFK = setTimeout(function () {
+                    this.playerList[this.currentPlayer].state = -1
+                    console.log("afk detected, setting his state to -1", this.playerList)
+                    this.nextPlayer()
+                }.bind(this), 15000)
+            } else {
+                this.currentPlayer++
+                this.nextPlayer()
+            }
         } else {
-            this.currentPlayer++
-            this.nextPlayer()
+            console.log("walkower");
+            this.gameEnded = true
         }
     }
 
-    checkForAFK(serverTime) {
-        if (serverTime - this.playerList[this.currentPlayer].turnBegin > 10000) {
-            this.playerList[this.currentPlayer].state = -1
-            this.nextPlayer()
-        }
+    isGameEnded() {
+        return this.gameEnded
     }
 }
 

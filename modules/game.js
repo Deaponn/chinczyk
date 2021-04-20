@@ -4,6 +4,7 @@ class Game {
         this.bases = {}
         this.homes = {}
         this.finished = false
+        this.winner = ""
         this.init()
     }
 
@@ -46,7 +47,6 @@ class Game {
     }
 
     movePawn(which, where, color, moves) {
-        console.log(which, where, color, moves)
         switch (where) {
             case "homes": {
                 if (moves == 1 || moves == 6) {
@@ -93,39 +93,33 @@ class Game {
     possibleMove(moves, color) {
         if (moves == 1 || moves == 6) {
             for (let i = 0; i < this.homes[color].length; i++) {
-                if (this.homes[color][i]) { console.log(moves, i, color, this.homes); return true }
+                if (this.homes[color][i]) { return true }
             }
         }
         for (let i = 0; i < this.board[color].length; i++) {
             if (this.board[color][i]) {
                 if (this.board[color][i].position + moves < 40) {
-                    console.log(moves, i, color, this.board);
                     return true
                 } else {
                     let baseSteps = this.board[color][i].position + moves - 40
                     if (baseSteps < 4 && !this.bases[color][baseSteps]) {
-                        console.log(moves, i, color, this.board, this.bases);
                         return true
                     }
                 }
             }
         }
         for (let i = 0; i < this.bases[color].length; i++) {
-            if (this.bases[color][i]) { if (this.bases[color][i].position + moves < 4) { console.log(moves, i, color, this.bases); return true } }
+            if (this.bases[color][i]) { if (this.bases[color][i].position + moves < 4) { return true } }
         }
         return false
     }
 
     killThem(color, position) {
-        console.log(`killing ${color} at ${position}`);
         for (const enemies in this.board) {
-            console.log(enemies);
             if (color == enemies) { continue }
             for (let i = 0; i < this.board[enemies].length; i++) {
                 if (this.board[enemies][i]) {
-                    console.log(`enemy exists at i = ${i}, absolute position is ${this.board[enemies][i].absolutePosition()}`);
                     if (position == this.board[enemies][i].absolutePosition()) {
-                        console.log("KILLLLLL")
                         this.homes[enemies][this.board[enemies][i].id] = this.board[enemies][i]
                         this.homes[enemies][this.board[enemies][i].id].position = -1
                         this.board[enemies][i] = null
@@ -136,17 +130,21 @@ class Game {
     }
 
     checkForWin() {
-        console.log("checking for win")
         for (const color in this.bases) {
             for (let i = 0; i < this.bases[color].length; i++) {
-                if (!this.bases[color][i]) { break } else { if (i == this.bases[color].length - 1) { this.playerWon(color); return 0 } }
+                if (!this.bases[color][i]) { break } else {
+                    if (i == this.bases[color].length - 1) {
+                        this.winner = color
+                        this.finished = true
+                        return 0
+                    }
+                }
             }
         }
     }
 
-    playerWon(color) {
-        console.log(color)
-        this.finished = true
+    whoWon() {
+        return this.winner
     }
 
     isGameEnded() {

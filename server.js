@@ -15,16 +15,6 @@ let lobbyList = []
 let previousRoll = 0
 let rolled = false
 
-function checkForAFKs() {
-    let serverTime = Date.now()
-    for (let i = 0; i < gameList.length; i++) {
-        if (lobbyList[i].full) {
-            lobbyList[i].checkForAFK(serverTime)
-        }
-    }
-    setTimeout(checkForAFKs, 100)
-}
-
 app.get("/", function (req, res) {
     res.sendFile("index.html")
 })
@@ -35,14 +25,12 @@ app.get("/favicon.ico", function (req, res) {
 
 app.post("/login", function (req, res) {
     let playerToken = uuid.v4()
-    console.log(playerToken)
     if (lobbyList.length == 0) {
         let newLobby = new Lobby(0)
         newLobby.newPlayer(playerToken, req.body.nickname)
         lobbyList.push(newLobby)
         let game = new Game()
         gameList.push(game)
-        checkForAFKs()
     } else if (lobbyList[lobbyList.length - 1].full) {
         let newLobby = new Lobby(gameList.length)
         newLobby.newPlayer(playerToken, req.body.nickname)
@@ -53,7 +41,6 @@ app.post("/login", function (req, res) {
         lobbyList[lobbyList.length - 1].newPlayer(playerToken, req.body.nickname) // joins current lobby
     }
     res.send({ playerToken: playerToken, newPlayer: true })
-    console.log(lobbyList)
 })
 
 app.post("/actions", function (req, res) {
@@ -70,7 +57,14 @@ app.post("/actions", function (req, res) {
             case "downloadGameState": {
                 let lobbyInfo = lobbyList[credentials.lobbyId].info(credentials.playerId)
                 let gameInfo = gameList[credentials.gameId].info()
-                res.send({ lobby: lobbyInfo, game: gameInfo, finished: gameList[credentials.gameId].isGameEnded() })
+                if (gameList[credentials.gameId].isGameEnded() || lobbyList[credentials.lobbyId].isGameEnded()) {
+                    res.send({ lobby: lobbyInfo, game: gameInfo, finished: true, winner: gameList[credentials.gameId].whoWon() })
+                    setTimeout(function () {
+                        gameList[credentials.gameId] = null
+                        lobbyList[credentials.lobbyId] = { getGameAndPlayer: function () { return 0 } }
+                        console.log("game with credentials", credentials, " deleted, game and lobby list: ", gameList, lobbyList);
+                    }, 3000)
+                } else { res.send({ lobby: lobbyInfo, game: gameInfo, finished: false }) }
                 break
             }
             case "changeReadyState": {
@@ -95,14 +89,13 @@ app.post("/actions", function (req, res) {
             }
             case "move": {
                 if (!gameList[credentials.gameId].isGameEnded()) {
-                    console.log(req.body)
                     if (credentials.state == 2 && req.body.color == credentials.color && rolled) {
                         let moved = gameList[credentials.gameId].movePawn(parseInt(req.body.clicked), req.body.where, req.body.color, previousRoll)
                         if (moved) {
                             lobbyList[credentials.lobbyId].nextPlayer()
                             rolled = false
                         }
-                    } else { console.log("not your move or pawn, ", credentials.color, req.body.color); }
+                    }
                     let lobbyInfo = lobbyList[credentials.lobbyId].info(credentials.playerId)
                     let gameInfo = gameList[credentials.gameId].info()
                     res.send({ lobby: lobbyInfo, game: gameInfo })
