@@ -8,7 +8,6 @@ const Game = require(__dirname + "/modules/game.js")
 var app = express()
 app.use(express.static('static'))
 app.use(bodyParser.urlencoded({ extended: true }));
-const PORT = 3000;
 
 let gameList = []
 let lobbyList = []
@@ -110,6 +109,6 @@ app.post("/actions", function (req, res) {
 
 //nasłuch na określonym porcie
 
-app.listen(PORT, function () {
-    console.log("start serwera na porcie " + PORT)
+app.listen(process.env.PORT || 3000, function () {
+    console.log("start serwera na porcie 3000")
 })
