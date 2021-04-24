@@ -3,16 +3,23 @@
 var express = require("express")
 var bodyParser = require("body-parser")
 var uuid = require("uuid")
+var cors = require("cors")
 const Lobby = require(__dirname + "/modules/lobby.js")
 const Game = require(__dirname + "/modules/game.js")
 var app = express()
 app.use(express.static('static'))
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cors())
 
 let gameList = []
 let lobbyList = []
 let previousRoll = 0
 let rolled = false
+
+function unrollTheDice() {
+    console.log("unrolling...")
+    rolled = false
+}
 
 app.get("/", function (req, res) {
     res.sendFile("index.html")
@@ -25,13 +32,13 @@ app.get("/favicon.ico", function (req, res) {
 app.post("/login", function (req, res) {
     let playerToken = uuid.v4()
     if (lobbyList.length == 0) {
-        let newLobby = new Lobby(0)
+        let newLobby = new Lobby(0, unrollTheDice)
         newLobby.newPlayer(playerToken, req.body.nickname)
         lobbyList.push(newLobby)
         let game = new Game()
         gameList.push(game)
     } else if (lobbyList[lobbyList.length - 1].full) {
-        let newLobby = new Lobby(gameList.length)
+        let newLobby = new Lobby(gameList.length, unrollTheDice)
         newLobby.newPlayer(playerToken, req.body.nickname)
         lobbyList.push(newLobby)
         let game = new Game()
@@ -60,7 +67,7 @@ app.post("/actions", function (req, res) {
                     res.send({ lobby: lobbyInfo, game: gameInfo, finished: true, winner: gameList[credentials.gameId].whoWon() })
                     setTimeout(function () {
                         gameList[credentials.gameId] = null
-                        lobbyList[credentials.lobbyId] = { getGameAndPlayer: function () { return 0 } }
+                        lobbyList[credentials.lobbyId] = { getGameAndPlayer: function () { return 0 }, full: true }
                         console.log("game with credentials", credentials, " deleted, game and lobby list: ", gameList, lobbyList);
                     }, 3000)
                 } else { res.send({ lobby: lobbyInfo, game: gameInfo, finished: false }) }
@@ -78,7 +85,9 @@ app.post("/actions", function (req, res) {
                         let roll = Math.floor(Math.random() * 6 + 1)
                         previousRoll = roll
                         res.send({ roll: roll })
+                        console.log(gameList[credentials.gameId], gameList[credentials.gameId].possibleMove(roll, credentials.color))
                         if (!gameList[credentials.gameId].possibleMove(roll, credentials.color)) {
+                            console.log("hejka", lobbyList[credentials.lobbyId])
                             lobbyList[credentials.lobbyId].nextPlayer()
                             rolled = false
                         }

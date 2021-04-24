@@ -1,38 +1,88 @@
-class Communication {
-    joinGame(nickname) {
+export default class Communication {
+
+    constructor() {
+        this.init()
+    }
+
+    init() {
+        console.log("inited")
+        document.getElementById("login").onclick = () => { this.joinGame() }
+        document.getElementById("roll").onclick = () => { this.roll() }
+        console.log(window)
+    }
+
+    addRender(render) {
+        this.render = render
+        console.log(render === this.render, Object.getPrototypeOf(render) === Object.getPrototypeOf(this.render))
+    }
+
+    connectToLobby() {
+        if (document.cookie.indexOf("playerToken") != -1) {
+            let manager = this
+            let cookies = JSON.parse("{\"" + document.cookie.replaceAll("=", "\": \"").replaceAll("; ", "\", \"") + "\"}")
+            let request = new XMLHttpRequest()
+            request.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    let response = JSON.parse(this.responseText)
+                    console.log(response)
+                    if (!response.notInLobby) {
+                        manager.downloadGameState()
+                        manager.render.boardSetup()
+                        manager.intervalId = setInterval(manager.downloadGameState.bind(manager), 1000)
+                    } else { document.cookie = "playerToken=\"\"; Expires=" + new Date(0).toUTCString(); console.log("deleted"); }
+                }
+            };
+            request.open("POST", "/actions", true)
+            request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            request.send("playerToken=" + cookies.playerToken + "&action=downloadGameState");
+        }
+    }
+
+    joinGame() {
+        let manager = this
+        console.log(manager)
+        let nickname = document.getElementById("nickname").value
         let request = new XMLHttpRequest()
         request.onreadystatechange = function () {
             if (this.readyState == 4 && this.status == 200) {
                 let response = JSON.parse(this.responseText)
                 console.log(response)
-                document.cookie = "playerToken=" + response.playerToken
-                downloadGameState()
+                document.cookie = "playerToken=" + response.playerToken + "; SameSite=Lax"
+                console.log("co? ", manager)
+                manager.downloadGameState()
+                manager.render.boardSetup()
+                manager.intervalId = setInterval(manager.downloadGameState.bind(manager), 1000)
             }
         };
-        request.open("POST", "http://localhost:3000/login", true)
+        request.open("POST", "/login", true)
         request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
         request.send("nickname=" + nickname);
     }
 
     downloadGameState() {
-        console.log("{\"" + document.cookie.replaceAll("=", "\": \"").replaceAll("; ", "\", \"") + "\"}")
+        let manager = this
+        console.log(this)
         let cookies = JSON.parse("{\"" + document.cookie.replaceAll("=", "\": \"").replaceAll("; ", "\", \"") + "\"}")
-        console.log("playerToken=" + cookies.playerToken + "&action=downloadGameState")
         let request = new XMLHttpRequest()
         request.onreadystatechange = function () {
             if (this.readyState == 4 && this.status == 200) {
                 let response = JSON.parse(this.responseText)
-                console.log("response received")
-                showGameState(response)
+                console.log(manager.render)
+                manager.render.showGameState(response)
+                if (response.finished) {
+                    console.log(manager.intervalId);
+                    clearInterval(manager.intervalId)
+                }
             }
         };
-        request.open("POST", "http://localhost:3000/actions", true)
+        request.open("POST", "/actions", true)
         request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
         request.send("playerToken=" + cookies.playerToken + "&action=downloadGameState");
     }
 
     changeReadyState() {
         let cookies = JSON.parse("{\"" + document.cookie.replaceAll("=", "\": \"").replaceAll("; ", "\", \"") + "\"}")
+        console.log("playerToken=" + cookies.playerToken + "&action=downloadGameState")
         let request = new XMLHttpRequest()
         request.onreadystatechange = function () {
             if (this.readyState == 4 && this.status == 200) {
@@ -59,10 +109,39 @@ class Communication {
                 }
             }
         };
-        request.open("POST", "http://localhost:3000/actions", true)
+        request.open("POST", "/actions", true)
         request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
         request.send("playerToken=" + cookies.playerToken + "&action=changeReadyState");
     }
-}
 
-export { Communication }
+    roll() {
+        let manager = this
+        let cookies = JSON.parse("{\"" + document.cookie.replaceAll("=", "\": \"").replaceAll("; ", "\", \"") + "\"}")
+        let request = new XMLHttpRequest()
+        request.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                let response = JSON.parse(this.responseText)
+                manager.render.showRoll(response)
+            }
+        };
+        request.open("POST", "/actions", true)
+        request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        request.send("playerToken=" + cookies.playerToken + "&action=roll");
+    }
+
+    moveThePawn(which, where, color) {
+        console.log(which, where, color)
+        let manager = this
+        let cookies = JSON.parse("{\"" + document.cookie.replaceAll("=", "\": \"").replaceAll("; ", "\", \"") + "\"}")
+        let request = new XMLHttpRequest()
+        request.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                let response = JSON.parse(this.responseText)
+                manager.render.showGameState(response)
+            }
+        };
+        request.open("POST", "/actions", true)
+        request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        request.send("playerToken=" + cookies.playerToken + "&action=move" + "&clicked=" + which + "&where=" + where + "&color=" + color);
+    }
+}

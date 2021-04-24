@@ -1,6 +1,7 @@
 class Lobby {
-    constructor(gameId) {
+    constructor(gameId, unrollTheDice) {
         this.gameId = gameId
+        this.unrollTheDice = unrollTheDice
         this.playerList = []
         this.remainingColors = ["red", "green", "blue", "yellow"]
         this.full = false
@@ -12,7 +13,13 @@ class Lobby {
         let color = Math.floor(Math.random() * this.remainingColors.length)
         this.playerList.push({ token: newPlayerToken, nickname: nickname.length > 0 ? nickname : "pusto", state: 0, color: this.remainingColors[color], turnBegin: 0 })
         this.remainingColors.splice(color, 1)
-        if (this.playerList.length == 4) { this.full = true; this.beginGame() }
+        if (this.playerList.length == 4) {
+            for (let i = 0; i < 4; i++) {
+                this.playerList[i].state = 1
+            }
+            this.full = true;
+            this.beginGame()
+        }
     }
 
     getPlayer(playerId) {
@@ -53,43 +60,66 @@ class Lobby {
         console.log("game began")
         this.playerList[0].state = 2
         this.playerList[0].turnBegin = Date.now()
-        this.detectedAFK = setTimeout(function () {
-            this.playerList[this.currentPlayer].state = -1
-            console.log("afk detected, setting his state to -1", this.playerList)
-            this.nextPlayer()
-        }.bind(this), 15000)
+        // this.detectedAFK = setTimeout(function () {
+        //     this.playerList[this.currentPlayer].state = -1
+        //     console.log("afk detected, setting his state to -1", this.playerList)
+        //     this.nextPlayer()
+        // }.bind(this), 15000)
         this.currentPlayer = 0
     }
 
     nextPlayer() {
-        let counter = 0
-        for (let i = 0; i < this.playerList.length; i++) {
-            if (this.playerList[i].state != -1) { counter++ }
-        }
-        if (counter > 1 && !this.gameEnded) {
-            clearTimeout(this.detectedAFK)
-            let nextPlayer = 1
-            if (this.currentPlayer == this.playerList.length - 1) {
-                nextPlayer = 0
-            } else { nextPlayer += this.currentPlayer }
-            if (this.playerList[nextPlayer].state == 1) {
-                this.playerList[this.currentPlayer].state = 1
-                this.playerList[nextPlayer].state = 2
-                this.playerList[nextPlayer].turnBegin = Date.now()
-                this.currentPlayer = nextPlayer
-                this.detectedAFK = setTimeout(function () {
-                    this.playerList[this.currentPlayer].state = -1
-                    console.log("afk detected, setting his state to -1", this.playerList)
-                    this.nextPlayer()
-                }.bind(this), 15000)
-            } else {
-                this.currentPlayer++
-                this.nextPlayer()
-            }
+        console.log("mextplayer")
+        clearTimeout(this.detectedAFK)
+        let nextPlayer = this.nextValidPlayer()
+        console.log(this.playerList, this.currentPlayer, nextPlayer)
+        if (nextPlayer != -1 && this.countActivePlayers() > 1) {
+            if (this.playerList[this.currentPlayer].state == 2) { this.playerList[this.currentPlayer].state = 1 }
+            this.currentPlayer = nextPlayer
+            this.playerList[this.currentPlayer].state = 2
+            this.playerList[this.currentPlayer].turnBegin = Date.now()
+            // this.detectedAFK = setTimeout(function () {
+            //     this.playerList[this.currentPlayer].state = -1
+            //     this.currentPlayer = nextPlayer
+            //     this.unrollTheDice()
+            //     console.log("afk detected, setting his state to -1", this.playerList)
+            //     this.nextPlayer()
+            // }.bind(this), 15000)
         } else {
-            console.log("walkower");
+            console.log("koniec")
             this.gameEnded = true
         }
+    }
+
+    nextValidPlayer() {
+        let nextPlayer = -1
+        for (let i = this.currentPlayer; i < this.playerList.length; i++) {
+            console.log(74, i)
+            if (nextPlayer == -1 && this.playerList[i].state == 1) {
+                nextPlayer = i
+            } else if (nextPlayer != -1) {
+                break
+            }
+        }
+        for (let i = 0; i < this.currentPlayer; i++) {
+            console.log(82, i)
+            if (nextPlayer == -1 && this.playerList[i].state == 1) {
+                nextPlayer = i
+            } else if (nextPlayer != -1) {
+                break
+            }
+        }
+        return nextPlayer
+    }
+
+    countActivePlayers() {
+        let counter = 0
+        for (let i = 0; i < this.playerList.length; i++) {
+            if (this.playerList[i].state > 0) {
+                counter++
+            }
+        }
+        return counter
     }
 
     isGameEnded() {
