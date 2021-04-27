@@ -75,7 +75,7 @@ app.post("/actions", function (req, res) {
                 if (!gameList[credentials.gameId].isGameEnded()) {
                     if (credentials.state == 2 && !lobbyList[credentials.lobbyId].rolled) {
                         lobbyList[credentials.lobbyId].rolled = true
-                        let roll = 6 // Math.floor(Math.random() * 6 + 1)
+                        let roll = Math.floor(Math.random() * 6 + 1)
                         lobbyList[credentials.lobbyId].previousRoll = roll
                         res.send({ roll: roll, speak: true })
                         if (!gameList[credentials.gameId].possibleMove(roll, credentials.color)) {
