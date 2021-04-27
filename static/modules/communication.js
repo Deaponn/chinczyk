@@ -61,13 +61,11 @@ export default class Communication {
 
     downloadGameState() {
         let manager = this
-        console.log(this)
         let cookies = JSON.parse("{\"" + document.cookie.replaceAll("=", "\": \"").replaceAll("; ", "\", \"") + "\"}")
         let request = new XMLHttpRequest()
         request.onreadystatechange = function () {
             if (this.readyState == 4 && this.status == 200) {
                 let response = JSON.parse(this.responseText)
-                console.log(manager.render)
                 manager.render.showGameState(response)
                 if (response.finished) {
                     console.log(manager.intervalId);

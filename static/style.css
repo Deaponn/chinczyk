@@ -1,3 +1,7 @@
+*{
+  font-size: 10px;
+}
+
 body{
   background-color:midnightblue;
   width: 100vw;
@@ -19,8 +23,11 @@ body{
 
 #form{
   position: absolute;
-  width: 25vw;
-  height: 5vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 26.6vw;
+  height: 3vw;
   top: 45vh;
   left: 35vw
 }
@@ -31,8 +38,9 @@ body{
 }
 
 #nickname{
+  box-sizing: border-box;
   width: 20vw;
-  height: 5vh;
+  height: 3vw;
 }
 
 #lobby{
@@ -44,6 +52,7 @@ body{
 }
 
 #lobby div{
+  visibility: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -53,20 +62,32 @@ body{
 }
 
 #login{
-  height: 5vh;
-  width: 4vw;
+  box-sizing: border-box;
+  height: 2.7vw;
+  width: 6.5vw;
+  font-size: 1vw;
 }
 
 #highlighted{
   background-color: antiquewhite;
 }
 
+#roll{
+  position: absolute;
+  width: 10vw;
+  height: 10vw;
+  left: 10vw;
+  top: calc(10vh + 15vw)
+}
+
 .active{
-  box-shadow: aqua 5px 0px 0px 5px;
+  box-shadow: aqua 0px 0px 2px 5px;
+  
 }
 
 .basic{
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   align-items: center;
   background-color: rgb(177, 219, 255);
@@ -76,14 +97,22 @@ body{
 }
 
 .pawn{
-  width: 60%;
-  height: 60%;
   border-radius: 50%;
   border: 1px solid black;
 }
 
+.single{
+  width: 60%;
+  height: 60%;
+}
+
+.more{
+  width: 40%;
+  height: 40%;
+}
+
 .possible{
-  box-shadow: aqua 5px 0px 0px 5px;
+  background-color: antiquewhite !important;
 }
 
 .base{
@@ -94,12 +123,17 @@ body{
   margin: 1px;
 }
 
+.hover{
+  cursor: pointer;
+}
+
 .red{
   background-color: red
 }
 
 .green{
-  background-color: green
+  background-color: green;
+  display: hidden;
 }
 
 .blue{

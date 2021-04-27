@@ -15,9 +15,9 @@ class Game {
             for (let j = 0; j < 4; j++) {
                 let pawn = {
                     color: colors[i],
-                    position: -1,
+                    position: j,
                     id: j,
-                    absolutePosition: function () {
+                    calcAbsolutePosition: function () {
                         let offset = 0
                         switch (this.color) {
                             case "blue": {
@@ -46,13 +46,52 @@ class Game {
         }
     }
 
+    smallOffset(color) {
+        let offset = 0
+        switch (color) {
+            case "blue": {
+                offset = 4
+                break
+            }
+            case "green": {
+                offset = 8
+                break
+            }
+            case "yellow": {
+                offset = 12
+            }
+        }
+        return offset
+    }
+
+    bigOffset(color, position) {
+        let offset = 0
+        switch (color) {
+            case "blue": {
+                offset = 10
+                break
+            }
+            case "green": {
+                offset = 20
+                break
+            }
+            case "yellow": {
+                offset = 30
+            }
+        }
+        if (offset + position > 39) {
+            offset -= 40
+        }
+        return position + offset
+    }
+
     movePawn(which, where, color, moves) {
         switch (where) {
             case "homes": {
                 if (moves == 1 || moves == 6) {
                     this.board[color][which] = this.homes[color][which]
                     this.board[color][which].position = 0
-                    this.killThem(color, this.board[color][which].absolutePosition())
+                    this.killThem(color, this.board[color][which].calcAbsolutePosition())
                     this.homes[color][which] = null
                     this.checkForWin()
                     return true
@@ -61,7 +100,7 @@ class Game {
             case "board": {
                 if (this.board[color][which].position + moves < 40) {
                     this.board[color][which].position += moves
-                    this.killThem(color, this.board[color][which].absolutePosition())
+                    this.killThem(color, this.board[color][which].calcAbsolutePosition())
                     this.checkForWin()
                     return true
                 } else {
@@ -109,7 +148,7 @@ class Game {
             }
         }
         for (let i = 0; i < this.bases[color].length; i++) {
-            if (this.bases[color][i]) { if (this.bases[color][i].position + moves < 4) { return true } }
+            if (this.bases[color][i]) { if (this.bases[color][i].position + moves < 4 && !this.bases[color][this.bases[color][i].position + moves]) { return true } }
         }
         return false
     }
@@ -119,9 +158,9 @@ class Game {
             if (color == enemies) { continue }
             for (let i = 0; i < this.board[enemies].length; i++) {
                 if (this.board[enemies][i]) {
-                    if (position == this.board[enemies][i].absolutePosition()) {
+                    if (position == this.board[enemies][i].calcAbsolutePosition()) {
                         this.homes[enemies][this.board[enemies][i].id] = this.board[enemies][i]
-                        this.homes[enemies][this.board[enemies][i].id].position = -1
+                        this.homes[enemies][this.board[enemies][i].id].position = this.board[enemies][i].id
                         this.board[enemies][i] = null
                     }
                 }
@@ -155,8 +194,38 @@ class Game {
         return "game state is working"
     }
 
+    basesData() {
+        let result = JSON.parse(JSON.stringify(this.bases))
+        for (const color in result) {
+            for (let i = 0; i < result[color].length; i++) {
+                result[color][i] ? result[color][i].absolutePosition = result[color][i].position + this.smallOffset(color) : undefined
+            }
+        }
+        return result
+    }
+
+    homesData() {
+        let result = JSON.parse(JSON.stringify(this.homes))
+        for (const color in result) {
+            for (let i = 0; i < result[color].length; i++) {
+                result[color][i] ? result[color][i].absolutePosition = result[color][i].position + this.smallOffset(color) : undefined
+            }
+        }
+        return result
+    }
+
+    boardData() {
+        let result = JSON.parse(JSON.stringify(this.board))
+        for (const color in result) {
+            for (let i = 0; i < result[color].length; i++) {
+                result[color][i] ? result[color][i].absolutePosition = this.bigOffset(color, result[color][i].position) : undefined
+            }
+        }
+        return result
+    }
+
     info() {
-        return { bases: this.bases, homes: this.homes, board: this.board }
+        return { bases: this.basesData(), homes: this.homesData(), board: this.boardData() }
     }
 }
 

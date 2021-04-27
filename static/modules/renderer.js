@@ -4,6 +4,15 @@ export default class Renderer {
         this.tileList = []
         this.homeList = []
         this.baseList = []
+        this.highlight = true
+        this.speak = window.speechSynthesis
+        this.voice = []
+        this.init()
+    }
+
+    init() {
+        this.voice = this.speak.getVoices()[0]
+        console.log(this.voice)
     }
 
     addManager(manager) {
@@ -84,73 +93,49 @@ export default class Renderer {
         for (let i = 0; i < 4; i++) {
             let player = document.createElement("div")
             player.style.backgroundColor = "grey"
-            player.innerHTML = "?"
             lobby.append(player)
         }
         lobby.append(switchElem)
-        console.log(switchElem)
+        let activeColor = "none"
         for (let i = 0; i < data.lobby.length; i++) {
+            let selected = 0
             switch (data.lobby[i].color) {
                 case "red": {
-                    if (data.lobby[i].state > 0) lobby.childNodes[0].style.backgroundColor = "red"
-                    lobby.childNodes[0].innerHTML = data.lobby[i].nickname
-                    if (data.lobby[i].state == 2) {
-                        switchElem.style.display = "none"
-                        time.innerHTML = 15 - Math.floor((Date.now() - data.lobby[i].turnBegin) / 1000)
-                        lobby.childNodes[0].append(time)
-                        lobby.childNodes[0].classList.add("active")
-                    }
-                    if (data.lobby[i].token) {
-                        switchInput.checked = data.lobby[i].state > 0
-                    }
                     break
                 }
                 case "green": {
-                    if (data.lobby[i].state > 0) lobby.childNodes[1].style.backgroundColor = "green"
-                    lobby.childNodes[1].innerHTML = data.lobby[i].nickname
-                    if (data.lobby[i].state == 2) {
-                        switchElem.style.display = "none"
-                        time.innerHTML = 15 - Math.floor((Date.now() - data.lobby[i].turnBegin) / 1000)
-                        lobby.childNodes[1].append(time)
-                        lobby.childNodes[1].classList.add("active")
-                    }
-                    if (data.lobby[i].token) {
-                        switchInput.checked = data.lobby[i].state > 0
-                    }
+                    selected = 1
                     break
                 }
                 case "blue": {
-                    if (data.lobby[i].state > 0) lobby.childNodes[2].style.backgroundColor = "blue"
-                    lobby.childNodes[2].innerHTML = data.lobby[i].nickname
-                    if (data.lobby[i].state == 2) {
-                        switchElem.style.display = "none"
-                        time.innerHTML = 15 - Math.floor((Date.now() - data.lobby[i].turnBegin) / 1000)
-                        lobby.childNodes[2].append(time)
-                        lobby.childNodes[2].classList.add("active")
-                    }
-                    if (data.lobby[i].token) {
-                        switchInput.checked = data.lobby[i].state > 0
-                    }
+                    selected = 2
                     break
                 }
                 case "yellow": {
-                    if (data.lobby[i].state > 0) lobby.childNodes[3].style.backgroundColor = "yellow"
-                    lobby.childNodes[3].innerHTML = data.lobby[i].nickname
-                    if (data.lobby[i].state == 2) {
-                        switchElem.style.display = "none"
-                        time.innerHTML = 15 - Math.floor((Date.now() - data.lobby[i].turnBegin) / 1000)
-                        lobby.childNodes[3].append(time)
-                        lobby.childNodes[3].classList.add("active")
-                    }
-                    if (data.lobby[i].token) {
-                        switchInput.checked = data.lobby[i].state > 0
-                    }
+                    selected = 3
                 }
+            }
+            if (data.lobby[i].state > 0) lobby.childNodes[selected].style.backgroundColor = data.lobby[i].color
+            lobby.childNodes[selected].innerHTML = data.lobby[i].nickname
+            lobby.childNodes[selected].style.visibility = "visible"
+            if (data.lobby[i].state == 2) {
+                switchElem.style.display = "none"
+                time.innerHTML = 30 - Math.floor((Date.now() - data.lobby[i].turnBegin) / 1000)
+                time.style.visibility = "visible"
+                lobby.childNodes[selected].append(time)
+                lobby.childNodes[selected].classList.add("active")
+            }
+            if (data.lobby[i].token) {
+                switchInput.checked = data.lobby[i].state > 0
+                data.lobby[i].state == 2 ? activeColor = data.lobby[i].color : undefined
             }
         }
         document.getElementById("main").append(lobby)
         this.clear()
         this.populate(data.game)
+        this.highlightPawns(activeColor, data.game)
+        if (activeColor != "none") { this.showRoll({ roll: data.roll, speak: data.speak }) }
+        if (data.finished) { alert("Wygral " + data.winner + ". Gratulacje!") }
     }
 
     clear() {
@@ -169,75 +154,52 @@ export default class Renderer {
         for (const color in data.homes) {
             for (let i = 0; i < data.homes[color].length; i++) {
                 if (data.homes[color][i]) {
-                    let offset = 0
-                    switch (color) {
-                        case "blue": {
-                            offset = 4
-                            break
-                        }
-                        case "green": {
-                            offset = 8
-                            break
-                        }
-                        case "yellow": {
-                            offset = 12
-                        }
-                    }
                     let pawn = document.createElement("div")
-                    pawn.classList.add("pawn", color)
-                    pawn.onclick = () => { this.manager.moveThePawn(i, "homes", color) }
-                    this.homeList[i + offset].append(pawn)
+                    pawn.classList.add("pawn", "single", color)
+                    pawn.onclick = () => {
+                        this.hideTheHighlight()
+                        this.manager.moveThePawn(i, "homes", color)
+                    }
+                    this.homeList[data.homes[color][i].absolutePosition].append(pawn)
                 }
             }
         }
         for (const color in data.board) {
             for (let i = 0; i < data.board[color].length; i++) {
                 if (data.board[color][i]) {
-                    let offset = 0
-                    switch (color) {
-                        case "blue": {
-                            offset = 10
-                            break
-                        }
-                        case "green": {
-                            offset = 20
-                            break
-                        }
-                        case "yellow": {
-                            offset = 30
-                        }
-                    }
-                    if (offset + data.board[color][i].position > 39) {
-                        offset -= 40
-                    }
                     let pawn = document.createElement("div")
                     pawn.classList.add("pawn", color)
-                    pawn.onclick = () => { this.manager.moveThePawn(i, "board", color) }
-                    this.tileList[data.board[color][i].position + offset].append(pawn)
+                    pawn.onclick = () => {
+                        this.hideTheHighlight()
+                        this.manager.moveThePawn(i, "board", color)
+                    }
+                    this.tileList[data.board[color][i].absolutePosition].append(pawn)
+                    switch (this.tileList[data.board[color][i].absolutePosition].childNodes.length) {
+                        case 0: {
+                            break
+                        }
+                        case 1: {
+                            this.tileList[data.board[color][i].absolutePosition].childNodes[0].classList.add("single")
+                            break
+                        }
+                        default: {
+                            this.tileList[data.board[color][i].absolutePosition].childNodes.forEach((pawn) => pawn.classList.add("more"))
+                            break
+                        }
+                    }
                 }
             }
         }
         for (const color in data.bases) {
             for (let i = 0; i < data.bases[color].length; i++) {
                 if (data.bases[color][i]) {
-                    let offset = 0
-                    switch (color) {
-                        case "blue": {
-                            offset = 4
-                            break
-                        }
-                        case "green": {
-                            offset = 8
-                            break
-                        }
-                        case "yellow": {
-                            offset = 12
-                        }
-                    }
                     let pawn = document.createElement("div")
-                    pawn.classList.add("pawn", color)
-                    pawn.onclick = () => { manager.moveThePawn(i, "bases", color) }
-                    this.baseList[i + offset].append(pawn)
+                    pawn.classList.add("pawn", "single", color)
+                    pawn.onclick = () => {
+                        this.hideTheHighlight()
+                        this.manager.moveThePawn(i, "bases", color)
+                    }
+                    this.baseList[data.bases[color][i].absolutePosition].append(pawn)
                 }
             }
         }
@@ -246,15 +208,127 @@ export default class Renderer {
     showRoll(data) {
         if (data.roll) {
             this.previousRoll = data.roll
-            document.getElementById("roll").innerHTML = data.roll
-        } else { alert("nie twoja kolej koles") }
+            if (data.speak) {
+                let line = new SpeechSynthesisUtterance(data.roll)
+                this.speak.speak(line)
+            }
+            document.getElementById("roll").src = "./gfx/" + data.roll + ".png"
+        } else {
+            this.previousRoll = 0
+            document.getElementById("roll").src = "./gfx/null.png"
+        }
     }
 
-    highlightTheMove() {
+    highlightPawns(color, game) {
+        if (color == "none" || this.previousRoll == 0) return
 
+        let homesPawns = this.selectPawns(game.homes[color], this.homeList)
+        let boardPawns = this.selectPawns(game.board[color], this.tileList)
+        let basesPawns = this.selectPawns(game.bases[color], this.baseList)
+
+        for (let i = 0; i < homesPawns.length; i++) {
+            if (this.previousRoll == 1 || this.previousRoll == 6) {
+                for (let j = 0; j < homesPawns[i].items.length; j++) {
+                    this.highlight ? homesPawns[i].items[j].classList.add("possible") : undefined
+                    homesPawns[i].items[j].classList.add("hover")
+                    homesPawns[i].items[j].onmouseover = () => { this.highlightNextMove(color) }
+                    homesPawns[i].items[j].onmouseout = () => { this.hideTheHighlight() }
+                }
+            }
+        }
+        for (let i = 0; i < boardPawns.length; i++) {
+            for (let j = 0; j < boardPawns[i].items.length; j++) {
+                if (this.possibleMove(game.board[color][boardPawns[i].pawn], "board", game.bases[color])) {
+                    this.highlight ? boardPawns[i].items[j].classList.add("possible") : undefined
+                    boardPawns[i].items[j].classList.add("hover")
+                    boardPawns[i].items[j].onmouseover = () => { this.highlightNextMove(color, { absolute: game.board[color][boardPawns[i].pawn].absolutePosition, regular: game.board[color][boardPawns[i].pawn].position }, true) }
+                    boardPawns[i].items[j].onmouseout = () => { this.hideTheHighlight() }
+                }
+            }
+        }
+        for (let i = 0; i < basesPawns.length; i++) {
+            for (let j = 0; j < basesPawns[i].items.length; j++) {
+                if (this.possibleMove(game.bases[color][basesPawns[i].pawn], "bases", game.bases[color])) {
+                    this.highlight ? basesPawns[i].items[j].classList.add("possible") : undefined
+                    basesPawns[i].items[j].classList.add("hover")
+                    basesPawns[i].items[j].onmouseover = () => { this.highlightNextMove(color, { absolute: game.bases[color][basesPawns[i].pawn].absolutePosition, regular: game.bases[color][basesPawns[i].pawn].position }) }
+                    basesPawns[i].items[j].onmouseout = () => { this.hideTheHighlight() }
+                }
+            }
+        }
+        this.highlight = !this.highlight
+    }
+
+    selectPawns(gameData, where) {
+        let result = []
+        for (let i = 0; i < gameData.length; i++) {
+            if (gameData[i]) {
+                result.push({ items: where[gameData[i].absolutePosition].childNodes, pawn: i })
+            }
+        }
+        return result
+    }
+
+    possibleMove(pawn, place, bases) {
+        if (!pawn) return false
+        if (pawn.position + this.previousRoll < 40 && place == "board") return true
+        if (place == "board") {
+            let baseSteps = pawn.position + this.previousRoll - 40
+            if (baseSteps < 4 && !bases[baseSteps]) {
+                return true
+            }
+            return false
+        }
+        if (pawn.position + this.previousRoll < 4 && !bases[pawn.position + this.previousRoll]) {
+            console.log(bases[pawn.position], this.previousRoll, bases, bases[pawn.position + this.previousRoll])
+            return true
+        }
+        return false
+    }
+
+    highlightNextMove(color, positions, fromBoard) {
+        if (!positions) {
+            console.log(this.tileList[this.offset(color)])
+            this.tileList[this.offset(color)].style.backgroundColor = "pink"
+            this.highlighted = this.tileList[this.offset(color)]
+            return
+        }
+        if (positions.regular + this.previousRoll < 40 && fromBoard) { // stays within the board
+            let indicatiorPosition = 0
+            positions.absolute + this.previousRoll < 40 ? undefined : indicatiorPosition = -40
+            this.tileList[positions.absolute + indicatiorPosition + this.previousRoll].style.backgroundColor = "pink"
+            this.highlighted = this.tileList[positions.absolute + indicatiorPosition + this.previousRoll]
+            return
+        }
+        if (fromBoard) {
+            let baseSteps = positions.regular + this.previousRoll - 40 + this.offset(color) / 2.5
+            this.baseList[baseSteps].style.backgroundColor = "pink"
+            this.highlighted = this.baseList[baseSteps]
+            return
+        }
+        this.baseList[positions.regular + this.previousRoll + this.offset(color) / 2.5].style.backgroundColor = "pink"
+        this.highlighted = this.baseList[positions.regular + this.previousRoll + this.offset(color) / 2.5]
     }
 
     hideTheHighlight() {
+        this.highlighted.style.backgroundColor = null
+    }
 
+    offset(color) {
+        let offset = 0
+        switch (color) {
+            case "blue": {
+                offset = 10
+                break
+            }
+            case "green": {
+                offset = 20
+                break
+            }
+            case "yellow": {
+                offset = 30
+            }
+        }
+        return offset
     }
 }
