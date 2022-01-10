@@ -12,7 +12,6 @@ export default class Renderer {
 
     init() {
         this.voice = this.speak.getVoices()[0]
-        console.log(this.voice)
     }
 
     addManager(manager) {
@@ -58,21 +57,18 @@ export default class Renderer {
             }
             tile.innerHTML = i
         }
-        console.log(this.tileList)
         for (let i = 0; i < homeMap.length; i++) {
             let tile = document.querySelector("[data-cords='" + homeMap[i].x + " " + homeMap[i].y + "']")
             this.homeList.push(tile)
             tile.classList.add("base")
             tile.innerHTML = i
         }
-        console.log(this.homeList)
         for (let i = 0; i < baseMap.length; i++) {
             let tile = document.querySelector("[data-cords='" + baseMap[i].x + " " + baseMap[i].y + "']")
             this.baseList.push(tile)
             tile.classList.add("basic", baseMap[i].color)
             tile.innerHTML = i
         }
-        console.log(this.baseList)
     }
 
     showGameState(data) {
@@ -280,7 +276,6 @@ export default class Renderer {
             return false
         }
         if (pawn.position + this.previousRoll < 4 && !bases[pawn.position + this.previousRoll]) {
-            console.log(bases[pawn.position], this.previousRoll, bases, bases[pawn.position + this.previousRoll])
             return true
         }
         return false
@@ -288,7 +283,6 @@ export default class Renderer {
 
     highlightNextMove(color, positions, fromBoard) {
         if (!positions) {
-            console.log(this.tileList[this.offset(color)])
             this.tileList[this.offset(color)].style.backgroundColor = "pink"
             this.highlighted = this.tileList[this.offset(color)]
             return

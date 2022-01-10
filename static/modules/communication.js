@@ -5,15 +5,12 @@ export default class Communication {
     }
 
     init() {
-        console.log("inited")
         document.getElementById("login").onclick = () => { this.joinGame() }
         document.getElementById("roll").onclick = () => { this.roll() }
-        console.log(window)
     }
 
     addRender(render) {
         this.render = render
-        console.log(render === this.render, Object.getPrototypeOf(render) === Object.getPrototypeOf(this.render))
     }
 
     connectToLobby() {
@@ -24,12 +21,11 @@ export default class Communication {
             request.onreadystatechange = function () {
                 if (this.readyState == 4 && this.status == 200) {
                     let response = JSON.parse(this.responseText)
-                    console.log(response)
                     if (!response.notInLobby) {
                         manager.downloadGameState()
                         manager.render.boardSetup()
                         manager.intervalId = setInterval(manager.downloadGameState.bind(manager), 1000)
-                    } else { document.cookie = "playerToken=\"\"; Expires=" + new Date(0).toUTCString(); console.log("deleted"); }
+                    } else { document.cookie = "playerToken=\"\"; Expires=" + new Date(0).toUTCString() }
                 }
             };
             request.open("POST", "/actions", true)
@@ -40,15 +36,12 @@ export default class Communication {
 
     joinGame() {
         let manager = this
-        console.log(manager)
         let nickname = document.getElementById("nickname").value
         let request = new XMLHttpRequest()
         request.onreadystatechange = function () {
             if (this.readyState == 4 && this.status == 200) {
                 let response = JSON.parse(this.responseText)
-                console.log(response)
                 document.cookie = "playerToken=" + response.playerToken + "; SameSite=Lax"
-                console.log("co? ", manager)
                 manager.downloadGameState()
                 manager.render.boardSetup()
                 manager.intervalId = setInterval(manager.downloadGameState.bind(manager), 1000)
@@ -68,7 +61,6 @@ export default class Communication {
                 let response = JSON.parse(this.responseText)
                 manager.render.showGameState(response)
                 if (response.finished) {
-                    console.log(manager.intervalId);
                     clearInterval(manager.intervalId)
                 }
             }
@@ -80,14 +72,11 @@ export default class Communication {
 
     changeReadyState() {
         let cookies = JSON.parse("{\"" + document.cookie.replaceAll("=", "\": \"").replaceAll("; ", "\", \"") + "\"}")
-        console.log("playerToken=" + cookies.playerToken + "&action=downloadGameState")
         let request = new XMLHttpRequest()
         request.onreadystatechange = function () {
             if (this.readyState == 4 && this.status == 200) {
-                console.log("response received")
                 let data = JSON.parse(this.responseText)
                 let lobby = document.getElementById("lobby")
-                console.log(lobby, data)
                 switch (data.color) {
                     case "red": {
                         if (data.state > 0) { lobby.childNodes[0].style.backgroundColor = "red" } else { lobby.childNodes[0].style.backgroundColor = "grey" }
@@ -128,7 +117,6 @@ export default class Communication {
     }
 
     moveThePawn(which, where, color) {
-        console.log(which, where, color)
         let manager = this
         let cookies = JSON.parse("{\"" + document.cookie.replaceAll("=", "\": \"").replaceAll("; ", "\", \"") + "\"}")
         let request = new XMLHttpRequest()
