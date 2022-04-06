@@ -8,3 +8,8 @@ manager.addRender(render)
 render.addManager(manager)
 
 manager.connectToLobby()
+
+const closeInfo = document.getElementById("close")
+closeInfo.onclick = () => {
+    document.getElementById("instructions").style.display = "none"
+}
